@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<meta charset=utf-8>
+<title>Web Locks API: Client IDs in query() vs. Service Worker</title>
+<link rel=help href="https://github.com/inexorabletash/web-locks">
+<script src="/resources/testharness.js"></script>
+<script src="/resources/testharnessreport.js"></script>
+<script src="/service-workers/service-worker/resources/test-helpers.sub.js"></script>
+<script>
+
+// Returns a promise resolved by the next message event.
+function message() {
+  return new Promise(resolve => {
+    window.addEventListener('message', event => {
+      resolve(event.data);
+    }, {once: true});
+  });
+}
+
+promise_test(async t => {
+  const iframe_url = 'resources/controlled-iframe.html';
+
+  // Register a service worker that will control an iframe.
+  const registration = await service_worker_unregister_and_register(
+    t, 'resources/service-worker.js', iframe_url);
+  await wait_for_state(t, registration.installing, 'activated');
+
+  // Create the iframe and have it do the work:
+  // * grab and hold a lock
+  // * make a request to the service worker to get its own clientId
+  // * query the lock manager to get the lock ID
+  const iframe = await with_iframe(iframe_url);
+  iframe.contentWindow.postMessage('', '*');
+  const data = await message();
+
+  // NOTE: Not assert_equals(), as we don't want log the randomly generated
+  // clientIds, since they would not match any failure expectation files.
+  assert_true(data.lock_clientId === data.sw_clientId,
+              'clientIds should match, but are different');
+
+  await registration.unregister();
+
+}, 'Client IDs match between Locks API and Service Workers');
+
+</script>
