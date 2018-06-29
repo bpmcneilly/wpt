@@ -1,18 +1,20 @@
 <html>
-<title>Accept-CH-Lifetime test</title>
+<title>Accept-CH-Lifetime test with same-origin iframe</title>
 <body>
 <script src="/resources/testharness.js"></script>
 <script src="/resources/testharnessreport.js"></script>
 
 <div id=test>
-    <p>Apart from this webpage, the test opens two more html web page. One test
-    is run in this web page, and two in the other web pages.
+    <p>Apart from this webpage, the test opens another html web page. One test
+    is run in this web page, and another in the second web page.
 </div>
 
 <script>
 
-// This test fetches resources/accept_ch_lifetime.html. The response headers to
-// that webpage contain Accept-CH and Accept-CH-Lifetime headers.
+// This test fetches resources/accept_ch_lifetime.html in a same origin iframe.
+// The response headers to that webpage contain Accept-CH and Accept-CH-Lifetime
+// headers.
+
 // Fetching that webpage should cause the user-agent to persist origin
 // preferences for the client hints specified in Accept-CH header for a
 // duration specified in the Accept-CH-Lifetime header.
@@ -37,15 +39,13 @@ promise_test(t => {
   });
 }, "Precondition: Test that the browser does not have client hints preferences cached");
 
-// Fetching this webpage should cause user-agent to persist client hint
-// preferences for the origin.
-window.open("resources/accept_ch_lifetime.html");
-async_test(t => {
-window.addEventListener('message', function(event) {
-  t.done();
-})
-}, "Loading of resources/accept_ch_lifetime.html did not finish.");
+</script>
 
+<!-- Fetching this webpage should cause user-agent to persist client hint
+ preferences for the origin.-->
+<iframe src="resources/accept_ch_lifetime.html"></iframe>
+
+<script>
 // Open a new window. Verify that the user agent attaches the client hints.
 window.open("resources/expect_client_hints_headers.html");
 async_test(t => {

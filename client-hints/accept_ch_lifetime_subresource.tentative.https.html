@@ -1,5 +1,5 @@
 <html>
-<title>Accept-CH test</title>
+<title>Accept-CH-Lifetime test with subresource</title>
 <body>
 <script src="/resources/testharness.js"></script>
 <script src="/resources/testharnessreport.js"></script>
@@ -11,17 +11,19 @@
 
 <script>
 
-// This test fetches resources/accept_ch.html. The response headers to
-// that webpage contains only the Accept-CH header. Due to the missing
-// Accept-CH-Lifetime header, the user-agent should not persist origin
-// preferences for the client hints specified in Accept-CH header.
+// This test fetches resources/accept_ch_lifetime.html as a subresource. The
+// response headers to that webpage contain Accept-CH and Accept-CH-Lifetime
+// headers.
 
-// Next, to verify that the origin preferences were not persisted by the user
+// Fetching that webpage as a subresource should NOT cause the user-agent to
+// persist origin preferences for the client hints specified in Accept-CH
+// header.
+
+// Next, to verify if the origin preferences were not persisted by the user
 // agent, this test fetches resources/do_not_expect_client_hints_headers.html
 // in a new window. Fetching of
-// resources/do_not_expect_client_hints_headers.html
-// verifies that the user agent does not send the client hints in the request
-// headers.
+// resources/do_not_expect_client_hints_headers.html verifies that the user
+// agent does not send the client hints in the request headers.
 
 // Test is marked as tentative until https://github.com/whatwg/fetch/issues/726
 // is resolved.
@@ -38,20 +40,26 @@ promise_test(t => {
 }, "Precondition: Test that the browser does not have client hints preferences cached");
 
 promise_test(t => {
-  return fetch("resources/accept_ch.html").then(r => {
+  // Fetching this web page as a subresource should NOT cause user-agent to
+  // persist client hint preferences for the origin.
+  return fetch("resources/accept_ch_lifetime.html").then(r => {
     assert_equals(r.status, 200)
+    // Verify that the browser did not include client hints in the request
+    // headers when fetching echo_client_hints_received.py.
     assert_false(r.headers.has("device-memory-received"), "device-memory-received");
 
-    // Open a new window.
+    // Open a new window. Verify that the user agent does not attach the client
+    // hints.
     window.open("resources/do_not_expect_client_hints_headers.html");
   });
-}, "Test receiving Accept-CH header");
+}, "Test receiving Accept-CH-Lifetime header");
 
 async_test(t => {
 window.addEventListener('message', function(event) {
   t.done();
 })
 }, "Loading of resources/do_not_expect_client_hints_headers.html did not finish.");
+
 
 </script>
 
